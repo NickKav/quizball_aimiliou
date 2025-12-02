@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Quiz - LOCKED</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 0 40px rgba(0,0,0, 0.6);
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            border: 4px solid #333;
+            position: relative;
+        }
+
+        /* Turn Indicator Colors */
+        .p1-turn { border-color: #2979ff; box-shadow: 0 0 25px rgba(41, 121, 255, 0.2); }
+        .p2-turn { border-color: #ff9100; box-shadow: 0 0 25px rgba(255, 145, 0, 0.2); }
+
+        /* Scoreboard */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            background: #000;
+            padding: 15px 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            font-size: 1.4em;
+            border: 1px solid #333;
+        }
+        .p1-score { color: #2979ff; }
+        .p2-score { color: #ff9100; }
+        
+        .turn-badge {
+            background-color: #333;
+            color: white;
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-size: 1em;
+            margin-bottom: 20px;
+            display: inline-block;
+            font-weight: bold;
+        }
+
+        /* Main Menu Buttons */
+        .menu-btn {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 18px;
+            width: 100%;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .menu-btn:active { transform: scale(0.98); }
+        .menu-btn:hover { background: #444; }
+
+        /* Difficulty Buttons */
+        .diff-btn {
+            padding: 20px; 
+            margin-bottom: 12px; 
+            font-size: 1.2em; 
+            border-radius: 15px; 
+            border: none; 
+            color: white; 
+            cursor: pointer; 
+            width: 100%; 
+            font-weight: bold;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            transition: 0.2s;
+        }
+        
+        /* LOCKED BUTTON STYLE - ΑΥΣΤΗΡΟ */
+        .btn-locked {
+            background-color: #111 !important; /* Μαύρο */
+            color: #444 !important; /* Σκούρο γκρι γράμματα */
+            border: 2px solid #222 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important; /* Δεν δέχεται κανένα κλικ */
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .diff-1 { background-color: #00c853; box-shadow: 0 4px 0 #009624; }
+        .diff-2 { background-color: #ffab00; color: #111; box-shadow: 0 4px 0 #c68400; }
+        .diff-3 { background-color: #d50000; box-shadow: 0 4px 0 #9b0000; }
+        
+        .diff-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* Game Area */
+        .points-tag {
+            background: #444; color: gold; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9em;
+        }
+
+        .question-card {
+            background-color: #2c2c2c;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .career-path { font-size: 1.2em; line-height: 1.5; color: #81d4fa; font-weight: bold; }
+        .question-img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .opt-btn { background-color: #333; border: 2px solid #444; color: white; padding: 15px; border-radius: 10px; cursor: pointer; font-size: 1em; font-weight: 500; }
+        .opt-btn:hover { background-color: #444; }
+        
+        .correct { background-color: #00c853 !important; border-color: #00c853 !important; }
+        .wrong { background-color: #d50000 !important; border-color: #d50000 !important; }
+
+        .hidden { display: none !important; }
+        
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+        .score-anim { animation: pop 0.4s ease-in-out; color: #00e676 !important;}
+    </style>
+</head>
+<body>
+
+<div id="main-app" class="app-container">
+    
+    <div class="scoreboard">
+        <span class="p1-score">P1: <span id="score-p1">0</span></span>
+        <span style="font-size:0.7em; color:#555; align-self:center;">VS</span>
+        <span class="p2-score">P2: <span id="score-p2">0</span></span>
+    </div>
+    
+    <div style="text-align:center;">
+        <div id="turn-badge" class="turn-badge">...</div>
+    </div>
+
+    <div id="screen-start">
+        <h1 style="color:#00e676; margin-bottom: 10px;">FOOTBALL QUIZ</h1>
+        <p style="color:#aaa; margin-bottom: 30px;">Lock Mode: ON 🔒</p>
+        <button class="menu-btn" style="background: linear-gradient(45deg, #00c853, #00e676); color:black; border:none;" onclick="initGame()">ΕΝΑΡΞΗ ⚽</button>
+    </div>
+
+    <div id="screen-menu" class="hidden">
+        <h2 style="color:#ccc;">Διάλεξε Κατηγορία:</h2>
+        <button class="menu-btn" onclick="selectCategory('PLAYER ID')">👤 Player ID</button>
+        <button class="menu-btn" onclick="selectCategory('GEOGRAPHY')">🌍 Γεωγραφία</button>
+        <button class="menu-btn" onclick="selectCategory('HISTORY')">📜 Ιστορία</button>
+        <button class="menu-btn" onclick="selectCategory('WHO MISSING')">❓ Ποιος Λείπει</button>
+    </div>
+
+    <div id="screen-difficulty" class="hidden">
+        <h2 style="color:#ccc;">Επίλεξε Βαθμό:</h2>
+        
+        <button id="btn-diff-1" class="diff-btn diff-1" onclick="selectDifficulty(1)">
+            <span id="lbl-1-left">Easy</span> <span id="lbl-1-right">1 Πόντος</span>
+        </button>
+        
+        <button id="btn-diff-2" class="diff-btn diff-2" onclick="selectDifficulty(2)">
+            <span id="lbl-2-left">Medium</span> <span id="lbl-2-right">2 Πόντοι</span>
+        </button>
+        
+        <button id="btn-diff-3" class="diff-btn diff-3" onclick="selectDifficulty(3)">
+            <span id="lbl-3-left">Hard</span> <span id="lbl-3-right">3 Πόντοι</span>
+        </button>
+        
+        <button class="menu-btn" style="background:transparent; border:none; color:#666; font-size:0.9em;" onclick="showScreen('screen-menu')">⬅ Πίσω</button>
+    </div>
+
+    <div id="screen-game" class="hidden">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+            <span style="color:#888" id="cat-label">CATEGORY</span>
+            <span class="points-tag">Για <span id="points-label">1</span> Πόντο(υς)</span>
+        </div>
+
+        <div class="question-card">
+            <img id="q-image" class="question-img hidden" src="">
+            <div id="q-text" class="career-path">Loading...</div>
+        </div>
+
+        <div id="options-area" class="options-grid"></div>
+        
+        <div id="feedback" style="height:40px; margin-top:15px; font-weight:bold; font-size:1.4em;"></div>
+        
+        <button id="next-btn" class="menu-btn hidden" style="margin-top:10px; background:white; color:black;" onclick="endTurn()">Συνέχεια ➡️</button>
+    </div>
+
+    <div id="screen-results" class="hidden">
+        <h1>ΤΕΛΙΚΟ ΣΚΟΡ</h1>
+        <h2 style="font-size:3.5em; margin: 20px 0;">
+            <span class="p1-score" id="final-p1">0</span> - <span class="p2-score" id="final-p2">0</span>
+        </h2>
+        <h3 id="winner-text" style="color:#00e676; font-size: 1.5em;"></h3>
+        <button class="menu-btn" onclick="initGame()">Νέο Παιχνίδι 🔄</button>
+    </div>
+
+</div>
+
+<script>
+    // --- DATABASE ---
+    const database = [
+        // LEVEL 1
+        { cat: 'PLAYER ID', diff: 1, text: "Molde ➡️ Salzburg ➡️ Dortmund ➡️ Man City", opts: ["Odegaard", "Haaland", "Isak", "Sorloth"], corr: 1 },
+        { cat: 'PLAYER ID', diff: 1, text: "Santos ➡️ Barcelona ➡️ PSG ➡️ Al Hilal", opts: ["Neymar", "Vinicius", "Rodrygo", "Rivaldo"], corr: 0 },
+        { cat: 'PLAYER ID', diff: 1, text: "Sporting CP ➡️ Man United ➡️ Real Madrid ➡️ Juventus", opts: ["Nani", "Figo", "Ronaldo", "Bruno"], corr: 2 },
+        { cat: 'GEOGRAPHY', diff: 1, text: "Σε ποια πόλη είναι το 'Old Trafford';", opts: ["Liverpool", "Manchester", "London", "Birmingham"], corr: 1 },
+        { cat: 'GEOGRAPHY', diff: 1, text: "Ποια ομάδα έχει έδρα το 'Camp Nou';", opts: ["Real Madrid", "Barcelona", "Valencia", "Sevilla"], corr: 1 },
+        { cat: 'HISTORY', diff: 1, text: "Ποια χώρα κατέκτησε το Μουντιάλ 2022;", opts: ["Γαλλία", "Βραζιλία", "Αργεντινή", "Πορτογαλία"], corr: 2 },
+        { cat: 'HISTORY', diff: 1, text: "Ποιος παίκτης έχει τις περισσότερες Χρυσές Μπάλες;", opts: ["Ronaldo", "Messi", "Pele", "Maradona"], corr: 1 },
+        { cat: 'WHO MISSING', diff: 1, text: "MSN: Messi, Suarez, ...", opts: ["Neymar", "Pedro", "Xavi", "Iniesta"], corr: 0 },
+        { cat: 'WHO MISSING', diff: 1, text: "BBC: Bale, Benzema, ...", opts: ["Ronaldo", "Modric", "Kroos", "Ramos"], corr: 0 },
+
+        // LEVEL 2
+        { cat: 'PLAYER ID', diff: 2, text: "Lille ➡️ Chelsea ➡️ Real Madrid", opts: ["Hazard", "Drogba", "Essien", "Kante"], corr: 0 },
+        { cat: 'PLAYER ID', diff: 2, text: "Ajax ➡️ Liverpool ➡️ Barcelona ➡️ Atletico Madrid", opts: ["Suarez", "De Jong", "Griezmann", "Depay"], corr: 0 },
+        { cat: 'GEOGRAPHY', diff: 2, text: "Πού βρίσκεται το γήπεδο 'Mestalla';", opts: ["Μαδρίτη", "Βαλένθια", "Σεβίλλη", "Βαρκελώνη"], corr: 1 },
+        { cat: 'GEOGRAPHY', diff: 2, text: "Ποια ομάδα παίζει στο 'Signal Iduna Park';", opts: ["Bayern", "Dortmund", "Leverkusen", "Schalke"], corr: 1 },
+        { cat: 'HISTORY', diff: 2, text: "Ποια χρονιά κατέκτησε η Ελλάδα το Euro;", opts: ["2000", "2004", "2008", "2012"], corr: 1 },
+        { cat: 'HISTORY', diff: 2, text: "Ποιος είναι ο πρώτος σκόρερ στην ιστορία του Champions League;", opts: ["Messi", "Lewandowski", "Ronaldo", "Benzema"], corr: 2 },
+        { cat: 'WHO MISSING', diff: 2, text: "Man Utd 2008: Rooney, Ronaldo, ...", opts: ["Tevez", "Berbatov", "Saha", "Nani"], corr: 0 },
+        { cat: 'WHO MISSING', diff: 2, text: "Barca Midfield (Classic): Xavi, Busquets, ...", opts: ["Fabregas", "Iniesta", "Thiago", "Rakitic"], corr: 1 },
+
+        // LEVEL 3
+        { cat: 'PLAYER ID', diff: 3, text: "West Ham ➡️ Man Utd ➡️ Man City ➡️ Juventus ➡️ Boca", opts: ["Tevez", "Mascherano", "Aguero", "Heinze"], corr: 0 },
+        { cat: 'PLAYER ID', diff: 3, text: "Metz ➡️ Salzburg ➡️ Southampton ➡️ Liverpool ➡️ Bayern", opts: ["Mane", "Firmino", "Salah", "Keita"], corr: 0 },
+        { cat: 'GEOGRAPHY', diff: 3, text: "Σε ποια χώρα εδρεύει η ομάδα 'Qarabağ';", opts: ["Καζακστάν", "Αζερμπαϊτζάν", "Τουρκία", "Αρμενία"], corr: 1 },
+        { cat: 'GEOGRAPHY', diff: 3, text: "Ποια ομάδα έχει έδρα το 'Estadio da Luz';", opts: ["Porto", "Sporting", "Benfica", "Braga"], corr: 2 },
+        { cat: 'HISTORY', diff: 3, text: "Ποιος σκόραρε 2 γκολ στον τελικό του Champions League 2010;", opts: ["Milito", "Eto'o", "Sneijder", "Pandev"], corr: 0 },
+        { cat: 'HISTORY', diff: 3, text: "Ποιος ήταν ο πρώτος σκόρερ του Μουντιάλ 2014;", opts: ["Messi", "Muller", "James Rodriguez", "Neymar"], corr: 2 },
+        { cat: 'WHO MISSING', diff: 3, text: "Inter 2010 (Treble): Eto'o, Milito, ...", opts: ["Pandev", "Sneijder", "Balotelli", "Crespo"], corr: 0 },
+        { cat: 'WHO MISSING', diff: 3, text: "Real Madrid 2002: Zidane, Raul, Figo, ...", opts: ["Ronaldo R9", "Beckham", "Morientes", "Owen"], corr: 2 }
+    ];
+
+    // --- VARIABLES ---
+    let p1Score = 0;
+    let p2Score = 0;
+    let currentPlayer = 1; 
+    let roundsPlayed = 0;
+    const MAX_ROUNDS = 5; 
+    
+    let currentCategory = "";
+    let currentDifficulty = 1; 
+    let currentQuestion = null;
+    
+    // availableQuestions: Ποιες ερωτήσεις είναι διαθέσιμες (για να μην βλέπουμε τις ίδιες).
+    let availableQuestions = []; 
+    // playedSlots: Ποια κουμπιά έχουν πατηθεί ΣΕ ΑΥΤΟ ΤΟ GAME. 
+    // Αυτό είναι το κλειδί για να μην ξαναπατηθούν.
+    let playedSlots = []; 
+
+    // --- MAIN FUNCTIONS ---
+
+    function initGame() {
+        p1Score = 0;
+        p2Score = 0;
+        currentPlayer = 1;
+        roundsPlayed = 0;
+        
+        // ΣΗΜΑΝΤΙΚΟ: Αδειάζουμε τη "μαύρη λίστα" με τα πατημένα κουμπιά
+        playedSlots = []; 
+        
+        document.getElementById('score-p1').innerText = "0";
+        document.getElementById('score-p2').innerText = "0";
+        
+        // Γέμισμα τράπουλας αν είναι άδεια
+        if(availableQuestions.length === 0) {
+            availableQuestions = [...database];
+        }
+        
+        startRound();
+    }
+
+    function startRound() {
+        if (roundsPlayed >= MAX_ROUNDS * 2) {
+            finishGame();
+            return;
+        }
+        updateTurnUI();
+        showScreen('screen-menu');
+    }
+
+    // --- UI HELPERS ---
+    function showScreen(id) {
+        document.querySelectorAll('.app-container > div').forEach(div => {
+            if(!div.classList.contains('scoreboard') && div.id !== 'turn-badge') {
+                div.classList.add('hidden');
+            }
+        });
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function updateTurnUI() {
+        const badge = document.getElementById('turn-badge');
+        const container = document.getElementById('main-app');
+        if(currentPlayer === 1) {
+            badge.innerText = "Σειρά: PLAYER 1 (ΜΠΛΕ)";
+            badge.style.background = "#2979ff";
+            badge.style.color = "white";
+            container.className = "app-container p1-turn"; 
+        } else {
+            badge.innerText = "Σειρά: PLAYER 2 (ΠΟΡΤΟΚΑΛΙ)";
+            badge.style.background = "#ff9100";
+            badge.style.color = "black";
+            container.className = "app-container p2-turn"; 
+        }
+    }
+
+    // --- CORE LOGIC: CATEGORY & LOCKING ---
+
+    function selectCategory(cat) {
+        currentCategory = cat;
+        
+        // ΕΛΕΓΧΟΣ: Πριν ανοίξει η οθόνη, τρέχουμε έλεγχο "Locked"
+        checkLocksAndShow();
+    }
+
+    function checkLocksAndShow() {
+        // Τρέχουμε loop για τα 3 κουμπιά (Easy, Medium, Hard)
+        for(let i=1; i<=3; i++) {
+            const btn = document.getElementById('btn-diff-' + i);
+            const lblLeft = document.getElementById('lbl-' + i + '-left');
+            const lblRight = document.getElementById('lbl-' + i + '-right');
+            
+            // Φτιάχνουμε το "κλειδί" (π.χ. "HISTORY-1")
+            const slotKey = currentCategory + '-' + i;
+            
+            // Reset στο κουμπί (καθαρό από προηγούμενα πατήματα)
+            btn.classList.remove('btn-locked');
+            btn.disabled = false;
+            
+            // 1. ΕΛΕΓΧΟΣ: ΕΧΕΙ ΠΑΙΧΤΕΙ;
+            if (playedSlots.includes(slotKey)) {
+                // ΝΑΙ -> ΚΛΕΙΔΩΣΕ ΤΟ
+                btn.classList.add('btn-locked');
+                btn.disabled = true;
+                lblLeft.innerText = "ΚΛΕΙΔΩΘΗΚΕ";
+                lblRight.innerText = "🔒";
+            }
+            // 2. ΕΛΕΓΧΟΣ: ΥΠΑΡΧΟΥΝ ΕΡΩΤΗΣΕΙΣ;
+            else {
+                // Ψάχνουμε αν υπάρχει ερώτηση στο database
+                const hasQuestions = availableQuestions.some(q => q.cat === currentCategory && q.diff === i);
+                if (!hasQuestions) {
+                    btn.classList.add('btn-locked');
+                    btn.disabled = true;
+                    lblLeft.innerText = "ΤΕΛΟΣ";
+                    lblRight.innerText = "🚫";
+                } else {
+                    // ΟΧΙ -> ΑΝΟΙΧΤΟ
+                    if(i===1) { lblLeft.innerText = "Easy"; lblRight.innerText = "1 Πόντος"; }
+                    if(i===2) { lblLeft.innerText = "Medium"; lblRight.innerText = "2 Πόντοι"; }
+                    if(i===3) { lblLeft.innerText = "Hard"; lblRight.innerText = "3 Πόντοι"; }
+                }
+            }
+        }
+        
+        showScreen('screen-difficulty');
+    }
+
+    function selectDifficulty(diff) {
+        const slotKey = currentCategory + '-' + diff;
+        
+        // ΑΣΦΑΛΕΙΑ: Αν είναι κλειδωμένο, μην κάνεις τίποτα
+        if (playedSlots.includes(slotKey)) return;
+
+        // 1. ΑΜΕΣΟ ΚΛΕΙΔΩΜΑ ΓΙΑ ΤΟ ΥΠΟΛΟΙΠΟ GAME
+        playedSlots.push(slotKey);
+
+        // 2. ΒΡΙΣΚΟΥΜΕ ΤΗΝ ΕΡΩΤΗΣΗ
+        currentDifficulty = diff; 
+        const filtered = availableQuestions.filter(q => q.cat === currentCategory && q.diff === currentDifficulty);
+        
+        if(filtered.length === 0) {
+            alert("Error: No questions found.");
+            return;
+        }
+
+        // 3. ΔΙΑΛΕΓΟΥΜΕ ΤΥΧΑΙΑ
+        currentQuestion = filtered[Math.floor(Math.random() * filtered.length)];
+        
+        // 4. ΔΙΑΓΡΑΦΟΥΜΕ ΤΗΝ ΕΡΩΤΗΣΗ (NO REPEATS)
+        const index = availableQuestions.indexOf(currentQuestion);
+        if (index > -1) availableQuestions.splice(index, 1);
+
+        // 5. ΠΑΜΕ ΣΤΟ GAME
+        showQuestionScreen();
+    }
+
+    function showQuestionScreen() {
+        showScreen('screen-game');
+        
+        // Reset UI Elements
+        document.getElementById('feedback').innerText = "";
+        document.getElementById('next-btn').classList.add('hidden');
+        document.getElementById('options-area').innerHTML = "";
+        
+        document.getElementById('cat-label').innerText = currentCategory;
+        document.getElementById('points-label').innerText = currentDifficulty; 
+        document.getElementById('q-text').innerText = currentQuestion.text;
+        
+        const imgEl = document.getElementById('q-image');
+        if(currentQuestion.image) {
+            imgEl.src = currentQuestion.image;
+            imgEl.classList.remove('hidden');
+        } else {
+            imgEl.classList.add('hidden');
+        }
+
+        // Create Buttons
+        currentQuestion.opts.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'opt-btn';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(idx, btn);
+            document.getElementById('options-area').appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx, btn) {
+        // Disable all options
+        const buttons = document.querySelectorAll('.opt-btn');
+        buttons.forEach(b => b.disabled = true); 
+
+        const pointsWon = currentDifficulty;
+
+        if(idx === currentQuestion.corr) {
+            btn.classList.add('correct');
+            document.getElementById('feedback').innerText = `ΣΩΣΤΟ! +${pointsWon} ΠΟΝΤΟΙ ✅`;
+            document.getElementById('feedback').style.color = "#00e676";
+            
+            if(currentPlayer === 1) {
+                p1Score += pointsWon;
+                updateScoreAnim('score-p1', p1Score);
+            } else {
+                p2Score += pointsWon;
+                updateScoreAnim('score-p2', p2Score);
+            }
+        } else {
+            btn.classList.add('wrong');
+            buttons[currentQuestion.corr].classList.add('correct'); 
+            document.getElementById('feedback').innerText = "ΛΑΘΟΣ! 0 ΠΟΝΤΟΙ ❌";
+            document.getElementById('feedback').style.color = "#d50000";
+        }
+
+        document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function updateScoreAnim(id, val) {
+        const el = document.getElementById(id);
+        el.innerText = val;
+        el.classList.remove('score-anim');
+        void el.offsetWidth; 
+        el.classList.add('score-anim');
+    }
+
+    function endTurn() {
+        roundsPlayed++;
+        currentPlayer = (currentPlayer === 1) ? 2 : 1; 
+        startRound();
+    }
+
+    function finishGame() {
+        showScreen('screen-results');
+        document.getElementById('final-p1').innerText = p1Score;
+        document.getElementById('final-p2').innerText = p2Score;
+        
+        let msg = "";
+        if(p1Score > p2Score) msg = "ΝΙΚΗΤΗΣ: PLAYER 1 🏆";
+        else if(p2Score > p1Score) msg = "ΝΙΚΗΤΗΣ: PLAYER 2 🏆";
+        else msg = "ΙΣΟΠΑΛΙΑ! 🤝";
+        
+        document.getElementById('winner-text').innerText = msg;
+    }
+
+</script>
+
+</body>
+</html>
